@@ -7,7 +7,9 @@ import (
 	"io"
 	"math"
 	"math/rand"
-	"os"
+	"net/http"
+	"net/url"
+	"strconv"
 )
 
 var palette = []color.Color{color.White, color.RGBA{0x00, 0xff, 0x00, 0xff}}
@@ -18,17 +20,24 @@ const (
 )
 
 func main() {
-	lissajous(os.Stdout)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		lissajous(w, r.URL.Query())
+	})
+	http.ListenAndServe("localhost:8000", nil)
 }
 
-func lissajous(out io.Writer) {
+func lissajous(out io.Writer, r url.Values) {
 	const (
-		cycles  = 5
 		res     = 0.001
 		size    = 100
 		nframes = 64
 		delay   = 8
 	)
+	icycles, err := strconv.Atoi(r.Get("cycles"))
+	if err != nil {
+		icycles = 5
+	}
+	cycles := float64(icycles)
 	freq := rand.Float64() * 3.0
 	anim := gif.GIF{LoopCount: nframes}
 	phase := 0.0
